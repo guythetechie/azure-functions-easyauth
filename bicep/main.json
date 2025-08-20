@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.37.4.10188",
-      "templateHash": "16471238254427501272"
+      "templateHash": "8023017420283447450"
     }
   },
   "parameters": {
@@ -92,11 +92,11 @@
       "name": "[format('plan-{0}', parameters('functionAppName'))]",
       "location": "[parameters('location')]",
       "sku": {
-        "name": "Y1",
-        "tier": "Dynamic"
+        "name": "FC1",
+        "tier": "FlexConsumption"
       },
       "properties": {
-        "reserved": false
+        "reserved": true
       }
     },
     {
@@ -104,7 +104,7 @@
       "apiVersion": "2023-01-01",
       "name": "[parameters('functionAppName')]",
       "location": "[parameters('location')]",
-      "kind": "functionapp",
+      "kind": "functionapp,linux",
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('plan-{0}', parameters('functionAppName')))]",
         "siteConfig": {
@@ -112,14 +112,6 @@
             {
               "name": "AzureWebJobsStorage",
               "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', parameters('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-01-01').keys[0].value)]"
-            },
-            {
-              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
-              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', parameters('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-01-01').keys[0].value)]"
-            },
-            {
-              "name": "WEBSITE_CONTENTSHARE",
-              "value": "[toLower(parameters('functionAppName'))]"
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -139,7 +131,8 @@
             }
           ],
           "ftpsState": "FtpsOnly",
-          "minTlsVersion": "1.2"
+          "minTlsVersion": "1.2",
+          "linuxFxVersion": "DOTNET-ISOLATED|9.0"
         },
         "httpsOnly": true
       },

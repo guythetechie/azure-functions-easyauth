@@ -50,16 +50,16 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-// App Service Plan (Consumption)
+// App Service Plan (Flex Consumption)
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: 'plan-${functionAppName}'
   location: location
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'FC1'
+    tier: 'FlexConsumption'
   }
   properties: {
-    reserved: false
+    reserved: true
   }
 }
 
@@ -67,7 +67,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
 resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
   name: functionAppName
   location: location
-  kind: 'functionapp'
+  kind: 'functionapp,linux'
   properties: {
     serverFarmId: appServicePlan.id
     siteConfig: {
@@ -75,14 +75,6 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'AzureWebJobsStorage'
           value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-        }
-        {
-          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-        }
-        {
-          name: 'WEBSITE_CONTENTSHARE'
-          value: toLower(functionAppName)
         }
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
@@ -103,6 +95,7 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
       ]
       ftpsState: 'FtpsOnly'
       minTlsVersion: '1.2'
+      linuxFxVersion: 'DOTNET-ISOLATED|9.0'
     }
     httpsOnly: true
   }
