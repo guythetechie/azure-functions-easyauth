@@ -16,9 +16,6 @@ public class HelloWorld(ILogger<HelloWorld> logger)
     {
         logger.LogInformation("C# HTTP trigger function processed a request.");
 
-        var headers = request.Headers.SelectMany(kvp => kvp.Value
-                                     .Select(value => new { kvp.Key, Value = value }));
-
         var json = request.Headers.Aggregate(new JsonObject(),
                                              (json, header) =>
                                              {
@@ -39,3 +36,4 @@ public class HelloWorld(ILogger<HelloWorld> logger)
         return new JsonResult(json);
     }
 }
+
