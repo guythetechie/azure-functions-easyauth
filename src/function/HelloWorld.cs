@@ -1,7 +1,8 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System;
@@ -11,29 +12,46 @@ namespace function;
 
 public class HelloWorld(ILogger<HelloWorld> logger)
 {
+    private static readonly JsonSerializerOptions serializerOptions = new() { WriteIndented = true };
+
     [Function("HelloWorld")]
     public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest request)
     {
         logger.LogInformation("C# HTTP trigger function processed a request.");
 
-        var json = request.Headers.Aggregate(new JsonObject(),
-                                             (json, header) =>
-                                             {
-                                                 json[header.Key] = header.Value switch
-                                                 {
-                                                     [var value] => value,
-                                                     var values => new JsonArray([.. values])
-                                                 };
+        var headerJson = SerializeHeaders(request.Headers);
+        LogHeaderJson(headerJson);
 
-                                                 return json;
-                                             });
+        return new JsonResult(headerJson);
+    }
 
-        var serializerOptions = new JsonSerializerOptions { WriteIndented = true };
-        var jsonString = json.ToJsonString(serializerOptions);
+    private static JsonObject SerializeHeaders(IHeaderDictionary headers) =>
+        headers.Aggregate(new JsonObject(),
+                          (json, header) => json.SetProperty(header.Key,
+                                                             header.Value.ToJsonNode()));
+                                                             
+    private void LogHeaderJson(JsonObject json)
+    {
+        var jsonString = JsonSerializer.Serialize(json, serializerOptions);
         logger.LogInformation("Headers: {Headers}", jsonString);
         Console.WriteLine(jsonString);
-
-        return new JsonResult(json);
     }
+}
+
+file static class Extensions
+{
+    public static JsonObject SetProperty(this JsonObject json, string key, JsonNode? value)
+    {
+        json[key] = value;
+
+        return json;
+    }
+
+    public static JsonNode? ToJsonNode(this StringValues source) =>
+        source switch
+        {
+            [var value] => value,
+            var values => new JsonArray([.. values])
+        };
 }
 
